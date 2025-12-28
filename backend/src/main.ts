@@ -102,12 +102,13 @@ async function bootstrap() {
   }
 
   app.enableCors({
-    origin: '*',
+    origin: process.env.FRONTEND_URL || '*',
     methods: 'GET,POST,PUT,PATCH,DELETE',
     credentials: true,
   });
 
-  const port = configService.get<number>('PORT') ?? 3000;
+  //const port = configService.get<number>('PORT') ?? 3000;
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
   await app.listen(port);
   console.log(`🚀 Server running on http://localhost:${port}`);
 }
