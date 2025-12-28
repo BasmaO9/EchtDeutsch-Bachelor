@@ -101,11 +101,14 @@ async function bootstrap() {
     console.error('❌ Failed to connect to MongoDB:', err);
   }
 
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || '*',
-    methods: 'GET,POST,PUT,PATCH,DELETE',
-    credentials: true,
-  });
+ const frontendUrl = configService.get<string>('FRONTEND_URL') || '*';
+
+ app.enableCors({
+  origin: frontendUrl,
+  methods: 'GET,POST,PUT,PATCH,DELETE',
+  credentials: true,
+});
+
 
   //const port = configService.get<number>('PORT') ?? 3000;
   const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
