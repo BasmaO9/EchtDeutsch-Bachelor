@@ -1,0 +1,454 @@
+.practice-questions {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  color: #000000;
+  padding: 2rem;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #000000;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+  transition: color 0.2s;
+  width: fit-content;
+}
+
+.back-link:hover {
+  color: #333333;
+}
+
+.back-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.practice-layout {
+  display: grid;
+  grid-template-columns: 1fr 500px;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.practice-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.vocabulary-section,
+.cultural-note-section {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-header svg {
+  width: 20px;
+  height: 20px;
+  color: #000000;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+}
+
+.toggle-english,
+.show-english-button {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  background-color: #ffffff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-english:hover,
+.show-english-button:hover {
+  border-color: #c5c5c5;
+  background-color: #f5f5f5;
+}
+
+.vocabulary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vocabulary-item {
+  background-color: #fafafa;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-block {
+  background-color: #fafafa;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #666666;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-text-primary {
+  font-size: 1rem;
+  color: #000000;
+  line-height: 1.6;
+}
+
+.summary-text-secondary {
+  font-size: 0.9375rem;
+  color: #666666;
+}
+
+.summary-block-secondary {
+  border-top: 1px solid #e5e5e5;
+  padding-top: 1rem;
+}
+
+.vocab-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vocab-word {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #000000;
+}
+
+.vocab-part-of-speech {
+  background-color: #e8e8e8;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666666;
+  text-transform: uppercase;
+}
+
+.vocab-usage {
+  font-size: 0.875rem;
+  color: #666666;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.vocab-translations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vocab-translation-primary {
+  font-size: 0.9375rem;
+  color: #000000;
+  font-weight: 500;
+}
+
+.vocab-translation-secondary {
+  font-size: 0.875rem;
+  color: #666666;
+}
+
+.cultural-note-text {
+  font-size: 1rem;
+  color: #000000;
+  line-height: 1.6;
+}
+
+.fun-fact-content {
+  background-color: #fafafa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fun-fact-text-primary {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #000000;
+}
+
+.fun-fact-text-secondary {
+  font-size: 0.9rem;
+  color: #666666;
+  border-top: 1px solid #e5e5e5;
+  padding-top: 0.75rem;
+}
+
+.practice-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.practice-chat {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-height: calc(100vh - 200px);
+  position: sticky;
+  top: 2rem;
+}
+
+.practice-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.practice-chat-header svg {
+  width: 20px;
+  height: 20px;
+  color: #000000;
+}
+
+.practice-chat-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+}
+
+.practice-subtitle {
+  font-size: 0.875rem;
+  color: #666666;
+  margin: 0 0 1.5rem 0;
+}
+
+.chat-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  overflow-y: auto;
+  max-height: 500px;
+  padding-right: 0.5rem;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #d5d5d5;
+  border-radius: 3px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.message-ai {
+  align-items: flex-start;
+}
+
+.message-user {
+  align-items: flex-end;
+}
+
+.message-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.message-content {
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  font-size: 0.9375rem;
+  color: #000000;
+  line-height: 1.5;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.message-user .message-content {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.feedback-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.feedback-indicator.correct {
+  color: #22c55e;
+}
+
+.feedback-indicator.incorrect {
+  color: #ef4444;
+}
+
+.feedback-indicator svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.hidden-english-block {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hidden-english {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: #111;
+  border: 1px dashed #cfcfcf;
+}
+
+.chat-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-input-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  background-color: #ffffff;
+  color: #000000;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.chat-input::placeholder {
+  color: #999999;
+}
+
+.submit-button {
+  align-self: flex-end;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: none;
+  background-color: #000000;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #666666;
+}
+
+.error-state {
+  color: #ef4444;
+}
+
+@media (max-width: 1024px) {
+  .practice-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-chat {
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .practice-questions {
+    padding: 1rem;
+  }
+
+  .vocabulary-section,
+  .cultural-note-section,
+  .practice-chat {
+    padding: 1.5rem;
+  }
+
+  .message-content {
+    max-width: 90%;
+  }
+}
+

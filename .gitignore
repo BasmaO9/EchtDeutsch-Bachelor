@@ -1,0 +1,22 @@
+# Node
+node_modules/
+dist/
+build/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# spaCy models
+*.spacy
+de_core_news_*
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# OS
+.DS_Store
