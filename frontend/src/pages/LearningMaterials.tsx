@@ -837,34 +837,49 @@ export default function LearningMaterials() {
   }, [id, personalization?._id]);
 
   useEffect(() => {
-    // Fetch evaluation when personalization is ready, with polling
+    // Only fetch evaluation if personalization exists and we don't have a generated evaluation yet
     if (personalization && id) {
-      // Clear any existing evaluation first to prevent showing stale data
-      setEvaluation(null);
+      // Check if we already have a generated evaluation for this personalization
+      const hasGeneratedEvaluation = evaluation && 
+        evaluation.isGenerated && 
+        evaluation.personalizationId === personalization._id;
       
-      fetchEvaluation();
-      
-      // Poll for evaluation every 3 seconds if not found
-      const pollInterval = setInterval(async () => {
-        const currentId = id;
-        const found = await fetchEvaluation();
-        if (found || currentId !== id) {
+      // Only fetch/poll if we don't have a generated evaluation yet
+      if (!hasGeneratedEvaluation) {
+        // Try to fetch once first
+        fetchEvaluation();
+        
+        // Poll for evaluation every 5 seconds (reduced frequency) if not found
+        const pollInterval = setInterval(async () => {
+          const currentId = id;
+          const currentPersonalizationId = personalization?._id;
+          
+          // Stop polling if media or personalization changed
+          if (currentId !== id || currentPersonalizationId !== personalization?._id) {
+            clearInterval(pollInterval);
+            return;
+          }
+          
+          // Check if evaluation was found and is generated
+          const found = await fetchEvaluation();
+          if (found) {
+            clearInterval(pollInterval);
+          }
+        }, 5000); // Increased to 5 seconds to reduce backend calls
+
+        // Stop polling after 60 seconds
+        const timeout = setTimeout(() => {
           clearInterval(pollInterval);
-        }
-      }, 3000);
+          setEvaluationLoading(false);
+        }, 60000);
 
-      // Stop polling after 60 seconds
-      const timeout = setTimeout(() => {
-        clearInterval(pollInterval);
-        setEvaluationLoading(false);
-      }, 60000);
-
-      return () => {
-        clearInterval(pollInterval);
-        clearTimeout(timeout);
-      };
+        return () => {
+          clearInterval(pollInterval);
+          clearTimeout(timeout);
+        };
+      }
     }
-  }, [personalization, id, fetchEvaluation]);
+  }, [personalization, id, evaluation, fetchEvaluation]);
 
   const handleGenerateEvaluation = async () => {
     if (!id || !personalization || !userProfile) return;
@@ -890,7 +905,10 @@ export default function LearningMaterials() {
     try {
       setGenerating(true);
       setError(null);
-      // Regenerate the entire scaffold
+      // Clear existing evaluation to show we're generating new one
+      setEvaluation(null);
+      
+      // Regenerate the entire scaffold (creates new personalization)
       const data = await personalizationApi.generate(id, {
         cefr: userProfile.cefr,
         interests: userProfile.interests,
@@ -898,31 +916,9 @@ export default function LearningMaterials() {
       }, modelProvider);
       setPersonalization(data);
       
-      // Regenerate evaluation after scaffold regeneration
-      if (data && data._id) {
-        try {
-          setEvaluationLoading(true);
-          await evaluationApi.generate(id, data._id, {
-            cefr: userProfile.cefr,
-            interests: userProfile.interests || [],
-            studyMajor: userProfile.studyMajor,
-          });
-          // Fetch the new evaluation
-          setTimeout(async () => {
-            try {
-              const newEval = await evaluationApi.getByMediaId(id, data._id);
-              setEvaluation(newEval);
-            } catch (err) {
-              console.log('Evaluation not ready yet after regeneration');
-            } finally {
-              setEvaluationLoading(false);
-            }
-          }, 2000);
-        } catch (err) {
-          console.error('Failed to regenerate evaluation:', err);
-          setEvaluationLoading(false);
-        }
-      }
+      // Evaluation will be auto-generated in background by backend
+      // The useEffect will handle polling for it once personalization is set
+      // No need to manually call generateEvaluation here - backend does it automatically
     } catch (err: any) {
       setError(err.message || 'Failed to regenerate content');
     } finally {
@@ -1637,41 +1633,62 @@ export default function LearningMaterials() {
                       {/* <p className="game-invitation-description">
                         Teste dein Verständnis mit interaktiven Karteikarten, Multiple-Choice-Fragen und Lückentext-Übungen!
                       </p> */}
-                      {evaluationLoading ? (
-                        <div className="inline-loading">
-                          <div className="loading-spinner" />
-                          <p>Fragen werden vorbereitet...</p>
-                        </div>
-                      ) : evaluation ? (
-                        <div className="game-button-container">
-                          <button
-                            className="ready-for-game-button"
-                            onClick={() => navigate(`/evaluation/${id}`)}
-                            disabled={generating || !hasVisitedMediaSource}
-                            title={!hasVisitedMediaSource ? 'Bitte erkunde zuerst den Originalinhalt' : ''}
-                          >
-                            <span className="button-icon">🚀</span>
-                            <span>los geht's!</span>
-                          </button>
-                          {!hasVisitedMediaSource && (
-                            <p className="game-button-hint">
-                              Erkunde zuerst den Originalinhalt, um fortzufahren
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="game-pending-container">
-                          <p className="game-pending-text">Dein Quiz wird vorbereitet. Bitte warten...</p>
-                          <button
-                            type="button"
-                            className="generate-game-button"
-                            onClick={handleGenerateEvaluation}
-                            disabled={!personalization || generating || evaluationLoading}
-                          >
-                            {evaluationLoading ? 'Wird generiert...' : 'Quiz jetzt generieren'}
-                          </button>
-                        </div>
-                      )}
+                      {(() => {
+                        // Check if we have a valid generated evaluation for the current personalization
+                        const hasValidEvaluation = evaluation && 
+                          evaluation.isGenerated && 
+                          evaluation.personalizationId === personalization?._id;
+                        
+                        // Check if we're waiting for evaluation (personalization exists but evaluation not ready yet)
+                        const isWaitingForEvaluation = personalization && !hasValidEvaluation;
+                        
+                        // Show loading if actively loading OR waiting for evaluation to be fetched
+                        if (evaluationLoading || isWaitingForEvaluation) {
+                          return (
+                            <div className="inline-loading">
+                              <div className="loading-spinner" />
+                              <p>Fragen werden vorbereitet...</p>
+                            </div>
+                          );
+                        }
+                        
+                        // Show button if evaluation exists and is generated
+                        if (hasValidEvaluation) {
+                          return (
+                            <div className="game-button-container">
+                              <button
+                                className="ready-for-game-button"
+                                onClick={() => navigate(`/evaluation/${id}`)}
+                                disabled={generating || !hasVisitedMediaSource}
+                                title={!hasVisitedMediaSource ? 'Bitte erkunde zuerst den Originalinhalt' : ''}
+                              >
+                                <span className="button-icon">🚀</span>
+                                <span>los geht's!</span>
+                              </button>
+                              {!hasVisitedMediaSource && (
+                                <p className="game-button-hint">
+                                  Erkunde zuerst den Originalinhalt, um fortzufahren
+                                </p>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        // Show generate button if evaluation doesn't exist
+                        return (
+                          <div className="game-pending-container">
+                            <p className="game-pending-text">Dein Quiz wird vorbereitet. Bitte warten...</p>
+                            <button
+                              type="button"
+                              className="generate-game-button"
+                              onClick={handleGenerateEvaluation}
+                              disabled={!personalization || generating || evaluationLoading}
+                            >
+                              {evaluationLoading ? 'Wird generiert...' : 'Quiz jetzt generieren'}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}

@@ -47,9 +47,8 @@ export class PersonalizationService {
     if (!media) throw new NotFoundException('Media not found');
     if (!media.transcript) throw new NotFoundException('Media transcript is required');
 
-    // Always generate new - delete existing if any
+    // Always generate new personalization - keep old ones for history
     const objectId = new Types.ObjectId(mediaId);
-    await this.personalizationModel.deleteMany({ mediaId: objectId });
 
     // Analyze transcript for CEFR level distribution
     let cefrAnalysis: CEFRAnalysisResult | null = null;
@@ -1243,7 +1242,11 @@ Remember: Every German output MUST have an English translation. Personalize base
       throw new NotFoundException('Invalid media id');
     }
     const userObjectId = new Types.ObjectId(userId);
-    const p = await this.personalizationModel.findOne({ mediaId: objectId, userId: userObjectId });
+    // Get the most recent personalization for this media and user (sorted by createdAt descending)
+    const p = await this.personalizationModel
+      .findOne({ mediaId: objectId, userId: userObjectId })
+      .sort({ createdAt: -1 })
+      .exec();
     if (!p) throw new NotFoundException('Personalization not found');
     return p;
   }
@@ -1297,15 +1300,16 @@ Remember: Every German output MUST have an English translation. Personalize base
     // IMPORTANT: Always generate a NEW evaluation for this scaffold/personalization.
     // We do NOT reuse existing evaluations so that each scaffold generation
     // gets its own fresh evaluation linked via personalizationId.
-    // However, we clean up any previous *incomplete* evaluation for this personalization.
-    const existingIncomplete = await this.evaluationModel.findOne({
+    // Delete ANY existing evaluation for this personalization (complete or incomplete)
+    // to avoid duplicate key errors when regenerating scaffold.
+    const existingEvaluation = await this.evaluationModel.findOne({
       mediaId: objectId,
       personalizationId: new Types.ObjectId(personalizationId),
-      isGenerated: false,
     });
 
-    if (existingIncomplete) {
-      await this.evaluationModel.deleteOne({ _id: existingIncomplete._id });
+    if (existingEvaluation) {
+      console.log('Deleting existing evaluation for personalizationId:', personalizationId, 'isGenerated:', existingEvaluation.isGenerated);
+      await this.evaluationModel.deleteOne({ _id: existingEvaluation._id });
     }
 
     // Fetch media to get transcript text
@@ -2084,14 +2088,40 @@ Remember: Every German output MUST have an English translation. Personalize base
       
       // ALWAYS create a NEW evaluation document for this scaffold/personalization.
       // This ensures each scaffold generation has its own evaluation instance.
-      const evaluationData = new this.evaluationModel({
-        mediaId: objectId,
-        personalizationId: new Types.ObjectId(personalizationId),
-        evaluationData: evaluationJsonString,
-        userId: new Types.ObjectId(userProfile.userId),
-        isGenerated: true,
-      });
-      await evaluationData.save();
+      // If a duplicate key error occurs (race condition), delete the existing one and retry.
+      let evaluationData;
+      try {
+        evaluationData = new this.evaluationModel({
+          mediaId: objectId,
+          personalizationId: new Types.ObjectId(personalizationId),
+          evaluationData: evaluationJsonString,
+          userId: new Types.ObjectId(userProfile.userId),
+          isGenerated: true,
+        });
+        await evaluationData.save();
+      } catch (saveError: any) {
+        // Handle duplicate key error (E11000) - can happen in race conditions
+        if (saveError.code === 11000 && saveError.keyPattern && saveError.keyPattern.mediaId && saveError.keyPattern.personalizationId) {
+          console.log('Duplicate key error detected, deleting existing evaluation and retrying...');
+          // Delete the existing evaluation and retry
+          await this.evaluationModel.deleteOne({
+            mediaId: objectId,
+            personalizationId: new Types.ObjectId(personalizationId),
+          });
+          // Retry creating the evaluation
+          evaluationData = new this.evaluationModel({
+            mediaId: objectId,
+            personalizationId: new Types.ObjectId(personalizationId),
+            evaluationData: evaluationJsonString,
+            userId: new Types.ObjectId(userProfile.userId),
+            isGenerated: true,
+          });
+          await evaluationData.save();
+        } else {
+          // Re-throw if it's a different error
+          throw saveError;
+        }
+      }
 
       // Verify what was saved
       const savedData = JSON.parse(evaluationData.evaluationData);
