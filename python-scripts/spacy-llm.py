@@ -16,10 +16,10 @@ from typing import List, Dict
 
 # Load the German spaCy model
 try:
-    nlp = spacy.load("de_core_news_lg")
+    nlp = spacy.load("de_core_news_sm")
 except OSError:
-    print("Error: German spaCy model 'de_core_news_lg' not found.", file=sys.stderr)
-    print("Please install it with: python -m spacy download de_core_news_lg", file=sys.stderr)
+    print("Error: German spaCy model 'de_core_news_sm' not found.", file=sys.stderr)
+    print("Please install it with: python -m spacy download de_core_news_sm", file=sys.stderr)
     sys.exit(1)
 
 
