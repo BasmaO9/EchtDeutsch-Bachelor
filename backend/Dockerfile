@@ -1,7 +1,7 @@
 # Use Node.js LTS version as base image
 FROM node:20-slim
 
-# Install Python 3 and pip, along with build dependencies needed for some Python packages
+# Install Python 3 and build dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -12,16 +12,20 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files FIRST (for Docker cache)
 COPY package*.json ./
 
-# Install all Node.js dependencies (including dev dependencies for build)
+# Copy NestJS config files BEFORE npm ci
+COPY tsconfig*.json ./
+COPY nest-cli.json ./
+
+# Install all Node.js dependencies (postinstall can now run safely)
 RUN npm ci
 
-# Copy all source files
+# Copy the rest of the source code
 COPY . .
 
-# Create Python virtual environment and install dependencies
+# Create Python virtual environment and install Python dependencies
 RUN python3 -m venv python-scripts/venv && \
     python-scripts/venv/bin/pip install --upgrade pip && \
     python-scripts/venv/bin/pip install --no-cache-dir -r python-scripts/requirements.txt
@@ -40,4 +44,3 @@ ENV NODE_ENV=production
 
 # Start the application
 CMD ["npm", "run", "start:prod"]
-
