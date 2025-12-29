@@ -25,10 +25,10 @@ RUN npm ci
 # Copy the rest of the source code
 COPY . .
 
-# Create Python virtual environment and install Python dependencies
 RUN python3 -m venv python-scripts/venv && \
     python-scripts/venv/bin/pip install --upgrade pip && \
-    python-scripts/venv/bin/pip install --no-cache-dir -r python-scripts/requirements.txt
+    python-scripts/venv/bin/pip install --no-cache-dir -r python-scripts/requirements.txt && \
+    python-scripts/venv/bin/python -m spacy download de_core_news_sm
 
 # Build NestJS application
 RUN npm run build
