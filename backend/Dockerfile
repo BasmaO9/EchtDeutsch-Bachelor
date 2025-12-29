@@ -1,0 +1,43 @@
+# Use Node.js LTS version as base image
+FROM node:20-slim
+
+# Install Python 3 and pip, along with build dependencies needed for some Python packages
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all Node.js dependencies (including dev dependencies for build)
+RUN npm ci
+
+# Copy all source files
+COPY . .
+
+# Create Python virtual environment and install dependencies
+RUN python3 -m venv python-scripts/venv && \
+    python-scripts/venv/bin/pip install --upgrade pip && \
+    python-scripts/venv/bin/pip install --no-cache-dir -r python-scripts/requirements.txt
+
+# Build NestJS application
+RUN npm run build
+
+# Remove dev dependencies to reduce image size
+RUN npm prune --production
+
+# Expose port
+EXPOSE 3000
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Start the application
+CMD ["npm", "run", "start:prod"]
+

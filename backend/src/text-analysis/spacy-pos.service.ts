@@ -37,20 +37,18 @@ export class SpacyPosService {
   private readonly pythonScriptPath: string;
 
   constructor() {
-    // Path to the Python script relative to project root
-    // process.cwd() returns the backend directory when running from backend,
-    // so we need to go up one level to reach the project root
+    // Path to the Python script relative to backend directory
+    // process.cwd() returns the backend directory when running from backend
     const backendDir = process.cwd();
-    const projectRoot = path.resolve(backendDir, '..');
     
     // Use Python from virtual environment
     const venvPythonPath = process.platform === 'win32'
-      ? path.join(projectRoot, 'python-scripts', 'venv', 'Scripts', 'python.exe')
-      : path.join(projectRoot, 'python-scripts', 'venv', 'bin', 'python');
+      ? path.join(backendDir, 'python-scripts', 'venv', 'Scripts', 'python.exe')
+      : path.join(backendDir, 'python-scripts', 'venv', 'bin', 'python');
     
     this.pythonInterpreter = venvPythonPath;
     this.pythonScriptPath = path.join(
-      projectRoot,
+      backendDir,
       'python-scripts',
       'spacy-llm.py',
     );
