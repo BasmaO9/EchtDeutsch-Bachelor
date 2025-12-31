@@ -34,6 +34,7 @@ export default function SharedHeader() {
 
   // Check if we're on scaffold (learning materials) or evaluation page
   const showReportButton = location.pathname.startsWith('/learning/') || location.pathname.startsWith('/evaluation/');
+  const showLibraryButton = location.pathname.startsWith('/learning/') || location.pathname.startsWith('/evaluation/');
   
   // Get current media ID from URL
   const currentMediaId = location.pathname.startsWith('/learning/') || location.pathname.startsWith('/evaluation/') 
@@ -185,6 +186,10 @@ export default function SharedHeader() {
     }
   };
 
+  const handleLibraryClick = () => {
+    navigate('/dashboard');
+  };
+
   // Don't show back button on dashboard
   const showBackButton = location.pathname !== '/dashboard';
 
@@ -226,6 +231,20 @@ export default function SharedHeader() {
         )}
       </div>
       <div className="header-right-modern">
+        {showLibraryButton && (
+          <button
+            className="library-button"
+            onClick={handleLibraryClick}
+            title="Go to Library"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 19.5C4 18.6716 4.67157 18 5.5 18H20.5C21.3284 18 22 18.6716 22 19.5C22 20.3284 21.3284 21 20.5 21H5.5C4.67157 21 4 20.3284 4 19.5Z" fill="currentColor"/>
+              <path d="M4 5.5C4 4.67157 4.67157 4 5.5 4H20.5C21.3284 4 22 4.67157 22 5.5C22 6.32843 21.3284 7 20.5 7H5.5C4.67157 7 4 6.32843 4 5.5Z" fill="currentColor"/>
+              <path d="M4 12.5C4 11.6716 4.67157 11 5.5 11H20.5C21.3284 11 22 11.6716 22 12.5C22 13.3284 21.3284 14 20.5 14H5.5C4.67157 14 4 13.3284 4 12.5Z" fill="currentColor"/>
+            </svg>
+            <span>Library</span>
+          </button>
+        )}
         {showReportButton && (
           <button
             className="report-bug-button"
