@@ -793,6 +793,60 @@ export default function Evaluation() {
     }
   };
 
+  const areAllQuestionsAnswered = (): boolean => {
+    if (!evalData) return false;
+
+    // Iterate through all phases
+    for (let phaseIdx = 0; phaseIdx < evalData.evaluation.length; phaseIdx++) {
+      const phase = evalData.evaluation[phaseIdx];
+      
+      // Iterate through all items in this phase
+      for (let itemIdx = 0; itemIdx < phase.items.length; itemIdx++) {
+        const item = phase.items[itemIdx];
+        const itemId = item.id;
+        const answer = answers[itemId];
+
+        // Check if answer exists
+        if (answer === undefined || answer === null) {
+          return false;
+        }
+
+        // For fill-in items with multiple blanks, check if all blanks are filled
+        if (item.type === 'fill' && Array.isArray(answer)) {
+          // Check if all blanks are filled (no null, undefined, or empty string)
+          const allFilled = answer.every((ans) => 
+            ans !== null && ans !== undefined && ans !== ''
+          );
+          if (!allFilled) {
+            return false;
+          }
+        } else if (item.type === 'fill' && !Array.isArray(answer)) {
+          // Single blank fill-in - check if answer is not empty
+          if (answer === '' || answer === null || answer === undefined) {
+            return false;
+          }
+        } else if (item.type === 'flashcard') {
+          // Flashcard needs an answer (correct or incorrect)
+          if (answer === '' || answer === null || answer === undefined) {
+            return false;
+          }
+        } else if (item.type === 'mcq') {
+          // MCQ needs a selected index
+          if (answer === null || answer === undefined) {
+            return false;
+          }
+        } else if (item.type === 'short_answer') {
+          // Short answer needs text input
+          if (!answer || answer.trim() === '') {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  };
+
   const calculateScores = (): {
     questionsAnsweredCorrectly: number[];
     questionsAnsweredWrong: number[];
@@ -1185,8 +1239,13 @@ export default function Evaluation() {
             </button>
             
             {isLastItem && isLastPhase ? (
-              <button type="button" className="nav-button-finish" onClick={handleFinish}>
-                Finish
+              <button 
+                type="button" 
+                className="nav-button-finish" 
+                onClick={handleFinish}
+                disabled={!areAllQuestionsAnswered()}
+              >
+                Beenden
               </button>
             ) : (
               <button type="button" className="nav-button-next" onClick={handleNext}>

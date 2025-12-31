@@ -1312,6 +1312,18 @@ Remember: Every German output MUST have an English translation. Personalize base
       await this.evaluationModel.deleteOne({ _id: existingEvaluation._id });
     }
 
+    // Create a placeholder evaluation document immediately to signal that generation has started
+    // This allows the frontend to know generation is in progress and avoid excessive polling
+    const placeholderEvaluation = new this.evaluationModel({
+      mediaId: objectId,
+      personalizationId: new Types.ObjectId(personalizationId),
+      evaluationData: '{}', // Empty placeholder data
+      userId: new Types.ObjectId(userProfile.userId),
+      isGenerated: false, // Signal that generation is in progress
+    });
+    await placeholderEvaluation.save();
+    console.log('Created placeholder evaluation with isGenerated: false, evaluationId:', placeholderEvaluation._id);
+
     // Fetch media to get transcript text
     const media = await this.mediaModel.findById(objectId);
     const transcriptText = media?.transcript || '';
@@ -2086,29 +2098,30 @@ Remember: Every German output MUST have an English translation. Personalize base
       const evaluationJsonString = JSON.stringify(converted);
       console.log('Saving evaluation JSON (first 500 chars):', evaluationJsonString.substring(0, 500));
       
-      // ALWAYS create a NEW evaluation document for this scaffold/personalization.
-      // This ensures each scaffold generation has its own evaluation instance.
-      // If a duplicate key error occurs (race condition), delete the existing one and retry.
+      // Update the placeholder evaluation with the actual data and mark as generated
+      // This ensures the frontend knows generation is complete
       let evaluationData;
       try {
-        evaluationData = new this.evaluationModel({
-          mediaId: objectId,
-          personalizationId: new Types.ObjectId(personalizationId),
-          evaluationData: evaluationJsonString,
-          userId: new Types.ObjectId(userProfile.userId),
-          isGenerated: true,
-        });
-        await evaluationData.save();
-      } catch (saveError: any) {
-        // Handle duplicate key error (E11000) - can happen in race conditions
-        if (saveError.code === 11000 && saveError.keyPattern && saveError.keyPattern.mediaId && saveError.keyPattern.personalizationId) {
-          console.log('Duplicate key error detected, deleting existing evaluation and retrying...');
-          // Delete the existing evaluation and retry
-          await this.evaluationModel.deleteOne({
+        // Find and update the placeholder evaluation we created earlier
+        const updatedEvaluation = await this.evaluationModel.findOneAndUpdate(
+          {
             mediaId: objectId,
             personalizationId: new Types.ObjectId(personalizationId),
-          });
-          // Retry creating the evaluation
+            isGenerated: false, // Only update the placeholder
+          },
+          {
+            evaluationData: evaluationJsonString,
+            isGenerated: true, // Mark as complete
+          },
+          { new: true } // Return the updated document
+        );
+
+        if (updatedEvaluation) {
+          evaluationData = updatedEvaluation;
+          console.log('Updated placeholder evaluation to isGenerated: true');
+        } else {
+          // Placeholder might have been deleted or doesn't exist, create a new one
+          console.log('Placeholder evaluation not found, creating new evaluation document');
           evaluationData = new this.evaluationModel({
             mediaId: objectId,
             personalizationId: new Types.ObjectId(personalizationId),
@@ -2117,6 +2130,39 @@ Remember: Every German output MUST have an English translation. Personalize base
             isGenerated: true,
           });
           await evaluationData.save();
+        }
+      } catch (saveError: any) {
+        // Handle duplicate key error (E11000) - can happen in race conditions
+        if (saveError.code === 11000 && saveError.keyPattern && saveError.keyPattern.mediaId && saveError.keyPattern.personalizationId) {
+          console.log('Duplicate key error detected, updating existing evaluation...');
+          // Update the existing evaluation instead of creating a new one
+          evaluationData = await this.evaluationModel.findOneAndUpdate(
+            {
+              mediaId: objectId,
+              personalizationId: new Types.ObjectId(personalizationId),
+            },
+            {
+              evaluationData: evaluationJsonString,
+              isGenerated: true,
+            },
+            { new: true, upsert: false }
+          );
+          
+          if (!evaluationData) {
+            // If update failed, delete and create new
+            await this.evaluationModel.deleteOne({
+              mediaId: objectId,
+              personalizationId: new Types.ObjectId(personalizationId),
+            });
+            evaluationData = new this.evaluationModel({
+              mediaId: objectId,
+              personalizationId: new Types.ObjectId(personalizationId),
+              evaluationData: evaluationJsonString,
+              userId: new Types.ObjectId(userProfile.userId),
+              isGenerated: true,
+            });
+            await evaluationData.save();
+          }
         } else {
           // Re-throw if it's a different error
           throw saveError;
@@ -2137,6 +2183,19 @@ Remember: Every German output MUST have an English translation. Personalize base
       return evaluationData;
     } catch (error) {
       console.error('Evaluation generation error:', error);
+      
+      // Clean up placeholder evaluation on error so frontend doesn't keep polling
+      try {
+        await this.evaluationModel.deleteOne({
+          mediaId: objectId,
+          personalizationId: new Types.ObjectId(personalizationId),
+          isGenerated: false,
+        });
+        console.log('Cleaned up placeholder evaluation after error');
+      } catch (cleanupError) {
+        console.error('Failed to clean up placeholder evaluation:', cleanupError);
+      }
+      
       if (error instanceof InternalServerErrorException || error instanceof NotFoundException) {
         throw error;
       }
@@ -2155,8 +2214,10 @@ Remember: Every German output MUST have an English translation. Personalize base
     
     console.log('getEvaluationByMediaId: Searching for evaluation with mediaId:', mediaId, 'personalizationId:', personalizationId);
     
-    // Build query filter
-    const query: any = { mediaId: objectId, isGenerated: true };
+    // Build query filter - return evaluations regardless of isGenerated status
+    // This allows frontend to know if generation is in progress (isGenerated: false)
+    // or complete (isGenerated: true)
+    const query: any = { mediaId: objectId };
     
     // If personalizationId is provided, filter by it to get the correct evaluation
     if (personalizationId) {
@@ -2170,9 +2231,10 @@ Remember: Every German output MUST have an English translation. Personalize base
     }
     
     // Get the most recent evaluation by sorting by createdAt descending
+    // Prefer completed evaluations (isGenerated: true) but also return in-progress ones
     const evaluation = await this.evaluationModel
       .findOne(query)
-      .sort({ createdAt: -1 })
+      .sort({ isGenerated: -1, createdAt: -1 }) // Sort by isGenerated first (true before false), then by date
       .exec();
     
     if (evaluation) {

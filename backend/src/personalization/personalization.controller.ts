@@ -137,6 +137,7 @@ export class PersonalizationController {
       console.log('Controller: Returning evaluation:', {
         evaluationId: evaluation._id,
         mediaId: evaluation.mediaId,
+        isGenerated: evaluation.isGenerated,
         hasEvaluationData: !!evaluation.evaluationData,
         evaluationDataLength: evaluation.evaluationData?.length || 0,
         evaluationDataPreview: evaluation.evaluationData?.substring(0, 200),

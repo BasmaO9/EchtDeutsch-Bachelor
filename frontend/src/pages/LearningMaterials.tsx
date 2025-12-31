@@ -453,6 +453,59 @@ function EvaluationPhase({ evaluation, currentPhaseIndex, currentItemIndex, answ
     return <div className="error-message">Item not found</div>;
   }
 
+  // Check if all questions are answered
+  const areAllQuestionsAnswered = (): boolean => {
+    // Iterate through all phases
+    for (let phaseIdx = 0; phaseIdx < phases.length; phaseIdx++) {
+      const phase = phases[phaseIdx];
+      
+      // Iterate through all items in this phase
+      for (let itemIdx = 0; itemIdx < phase.items.length; itemIdx++) {
+        const item = phase.items[itemIdx];
+        const itemId = item.id;
+        const answer = answers[itemId];
+
+        // Check if answer exists
+        if (answer === undefined || answer === null) {
+          return false;
+        }
+
+        // For fill-in items with multiple blanks, check if all blanks are filled
+        if (item.type === 'fill' && Array.isArray(answer)) {
+          // Check if all blanks are filled (no null, undefined, or empty string)
+          const allFilled = answer.every((ans) => 
+            ans !== null && ans !== undefined && ans !== ''
+          );
+          if (!allFilled) {
+            return false;
+          }
+        } else if (item.type === 'fill' && !Array.isArray(answer)) {
+          // Single blank fill-in - check if answer is not empty
+          if (answer === '' || answer === null || answer === undefined) {
+            return false;
+          }
+        } else if (item.type === 'flashcard') {
+          // Flashcard needs an answer (correct or incorrect)
+          if (answer === '' || answer === null || answer === undefined) {
+            return false;
+          }
+        } else if (item.type === 'mcq') {
+          // MCQ needs a selected index
+          if (answer === null || answer === undefined) {
+            return false;
+          }
+        } else if (item.type === 'short_answer') {
+          // Short answer needs text input
+          if (!answer || answer.trim() === '') {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  };
+
   const phaseNames: Record<string, string> = {
     flashcard: 'Flashcards',
     mcq: 'Multiple Choice',
@@ -537,7 +590,14 @@ function EvaluationPhase({ evaluation, currentPhaseIndex, currentItemIndex, answ
         ) : currentPhaseIndex < phases.length - 1 ? (
           <button type="button" onClick={onNextPhase} className="nav-button primary">Next Phase</button>
         ) : (
-          <button type="button" onClick={onFinish} className="nav-button primary">Finish Evaluation</button>
+          <button 
+            type="button" 
+            onClick={onFinish} 
+            className="nav-button primary"
+            disabled={!areAllQuestionsAnswered()}
+          >
+            Beenden
+          </button>
         )}
       </div>
     </div>
@@ -743,7 +803,7 @@ export default function LearningMaterials() {
 
   const fetchEvaluation = useCallback(async () => {
     if (!id) {
-      return false;
+      return { found: false, isGenerating: false };
     }
     
     const currentMediaId = id;
@@ -759,6 +819,7 @@ export default function LearningMaterials() {
         evaluationId: evalData._id,
         mediaId: evalData.mediaId,
         personalizationId: evalData.personalizationId,
+        isGenerated: evalData.isGenerated,
         hasEvaluationData: !!evalData.evaluationData,
       });
       
@@ -768,7 +829,7 @@ export default function LearningMaterials() {
           fetchedMediaId: evalData.mediaId,
           currentMediaId: currentMediaId,
         });
-        return false;
+        return { found: false, isGenerating: false };
       }
       
       // Safety check: Verify personalizationId matches if we requested one
@@ -781,6 +842,15 @@ export default function LearningMaterials() {
         // Don't return false here - might be okay if no personalizationId was requested
       }
       
+      // If evaluation exists but is not generated yet, it means generation is in progress
+      if (evalData && !evalData.isGenerated) {
+        console.log('Frontend: Evaluation generation in progress (isGenerated: false)');
+        // Don't set evaluation state - it's not ready yet
+        // Keep loading state active (don't set to false in finally)
+        return { found: true, isGenerating: true };
+      }
+      
+      // If evaluation is generated, validate and set it
       if (evalData && evalData.isGenerated) {
         // Validate structure - handle both stringified JSON and direct JSON objects
         let parsed: any;
@@ -794,12 +864,12 @@ export default function LearningMaterials() {
           }
         } catch (err) {
           console.error('Failed to parse evaluation data:', err);
-          return false;
+          return { found: false, isGenerating: false };
         }
         
         if (!parsed || !parsed.evaluation || !Array.isArray(parsed.evaluation)) {
           console.error('Invalid evaluation structure');
-          return false;
+          return { found: false, isGenerating: false };
         }
         
         // Log flashcard types to verify correct evaluation
@@ -815,7 +885,7 @@ export default function LearningMaterials() {
         // Double-check mediaId matches before setting (prevent race conditions)
         if (String(evalData.mediaId) !== String(currentMediaId)) {
           console.error('MediaId mismatch after parsing');
-          return false;
+          return { found: false, isGenerating: false };
         }
         
         // Set evaluation state
@@ -825,14 +895,22 @@ export default function LearningMaterials() {
         setEvaluationAnswers({});
         setEvaluationFeedback({});
         setEvaluationLoading(false);
-        return true;
+        return { found: true, isGenerating: false };
       }
-      return false;
+      // Evaluation not found
+      setEvaluationLoading(false);
+      return { found: false, isGenerating: false };
     } catch (err: any) {
       // Evaluation might not be generated yet, that's okay
-      return false;
-    } finally {
+      // Check if it's a 404 (not found) vs other error
+      if (err.message && err.message.includes('not found')) {
+        console.log('Frontend: Evaluation not found yet');
+        setEvaluationLoading(false);
+        return { found: false, isGenerating: false };
+      }
+      console.error('Frontend: Error fetching evaluation:', err);
       setEvaluationLoading(false);
+      return { found: false, isGenerating: false };
     }
   }, [id, personalization?._id]);
 
@@ -847,9 +925,17 @@ export default function LearningMaterials() {
       // Only fetch/poll if we don't have a generated evaluation yet
       if (!hasGeneratedEvaluation) {
         // Try to fetch once first
-        fetchEvaluation();
+        fetchEvaluation().then((result) => {
+          // If evaluation is found and generated, we're done
+          // If evaluation is found but not generated, start polling
+          // If evaluation is not found, start polling
+          if (result.found && !result.isGenerating) {
+            // Evaluation is complete, no need to poll
+            return;
+          }
+        });
         
-        // Poll for evaluation every 5 seconds (reduced frequency) if not found
+        // Poll for evaluation every 5 seconds only if generation is in progress
         const pollInterval = setInterval(async () => {
           const currentId = id;
           const currentPersonalizationId = personalization?._id;
@@ -860,18 +946,26 @@ export default function LearningMaterials() {
             return;
           }
           
-          // Check if evaluation was found and is generated
-          const found = await fetchEvaluation();
-          if (found) {
+          // Check evaluation status
+          const result = await fetchEvaluation();
+          
+          // Stop polling if evaluation is found and generation is complete
+          if (result.found && !result.isGenerating) {
             clearInterval(pollInterval);
+            setEvaluationLoading(false);
+          } else if (!result.found && !result.isGenerating) {
+            // Evaluation not found and not generating - might have been deleted or error occurred
+            // Continue polling for a bit longer in case it's being created
           }
-        }, 5000); // Increased to 5 seconds to reduce backend calls
+          // If isGenerating is true, continue polling
+        }, 5000); // Poll every 5 seconds to reduce backend calls
 
-        // Stop polling after 60 seconds
+        // Stop polling after 2 minutes (generation should complete by then)
         const timeout = setTimeout(() => {
           clearInterval(pollInterval);
           setEvaluationLoading(false);
-        }, 60000);
+          console.warn('Frontend: Stopped polling for evaluation after timeout');
+        }, 120000); // 2 minutes timeout
 
         return () => {
           clearInterval(pollInterval);
