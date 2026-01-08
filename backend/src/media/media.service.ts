@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Media } from 'src/Models/media.schema';
 import { Personalization } from 'src/Models/personalization.schema';
 import { ScraperService } from '../scraper/scraper.service';
@@ -53,9 +53,10 @@ export class MediaService {
   /**
    * Scrapes an article or video from a supported website and saves it as a media item
    * @param url - The URL of the article or video to scrape
+   * @param userId - The ID of the user adding the media
    * @returns The created media item
    */
-  async scrapeAndSaveArticle(url: string): Promise<Media> {
+  async scrapeAndSaveArticle(url: string, userId: string): Promise<Media> {
     // Scrape the article or video
     const scrapedData = await this.scraperService.scrapeArticle(url);
 
@@ -72,6 +73,7 @@ export class MediaService {
       topic: '', // Leave empty as requested
       imageUrl: scrapedData.imageUrl || undefined,
       visibility: 'private', // Default to private
+      userId: new Types.ObjectId(userId), // Convert to ObjectId
     };
 
     // Create and save media item (CEFR will be classified automatically in createMedia)

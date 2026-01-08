@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mediaApi, userProfileApi, type MediaItem as ApiMediaItem } from '../services/api';
 import { authService } from '../services/auth';
+import { getUserIdFromToken } from '../utils/jwt';
 import SharedHeader from '../components/SharedHeader';
 import dwLogo from '../assets/dw.jpg';
 import ytLogo from '../assets/yt.png';
@@ -20,6 +21,7 @@ interface DisplayMediaItem {
   imageUrl: string;
   sourceUrl: string;
   visibility: 'global' | 'private'; // Visibility status
+  userId?: string; // User ID who added the media
 }
 
 // Helper function to extract source from URL only
@@ -156,7 +158,8 @@ const convertToDisplayItem = (apiItem: ApiMediaItem): DisplayMediaItem => {
     type: apiItem.type,
     imageUrl: resolveThumbnail(apiItem),
     sourceUrl: apiItem.sourceUrl || '',
-    visibility: apiItem.visibility || 'global' // Include visibility
+    visibility: apiItem.visibility || 'global', // Include visibility
+    userId: apiItem.userId // Include userId
   };
 };
 
@@ -199,6 +202,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState<string>('Learner'); // Default name
   const [userInterests, setUserInterests] = useState<string[]>([]); // User interests
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [userId, setUserId] = useState<string | null>(null); // Current user ID
 
   // Scraper state
   const [scrapeUrl, setScrapeUrl] = useState('');
@@ -261,6 +265,14 @@ export default function Dashboard() {
       setUserName(user.username);
     }
 
+    // Get userId from JWT token or auth service
+    const tokenUserId = getUserIdFromToken();
+    if (tokenUserId) {
+      setUserId(tokenUserId);
+    } else if (user && user.id) {
+      setUserId(user.id);
+    }
+
     const fetchUserProfile = async () => {
       try {
         const profile = await userProfileApi.getProfile();
@@ -274,6 +286,10 @@ export default function Dashboard() {
         // Extract interests if available
         if (profile && (profile as any).interests && Array.isArray((profile as any).interests)) {
           setUserInterests((profile as any).interests);
+        }
+        // Get userId from profile if available (as fallback)
+        if (profile && (profile as any).userId && !userId) {
+          setUserId(String((profile as any).userId));
         }
       } catch (err) {
         console.error('Failed to fetch user profile:', err);
@@ -318,7 +334,13 @@ export default function Dashboard() {
 
   // Separate items by visibility
   const globalItems = filteredItems.filter(item => item.visibility === 'global');
-  const privateItems = filteredItems.filter(item => item.visibility === 'private');
+  // Filter private items by userId - only show media added by the logged-in user
+  const privateItems = filteredItems.filter(item => 
+    item.visibility === 'private' && 
+    userId && 
+    item.userId && 
+    String(item.userId) === String(userId)
+  );
 
   // Filter by selected category for global items
   const categoryFilteredGlobalItems = selectedCategory === 'all' 
@@ -644,6 +666,148 @@ export default function Dashboard() {
                   </div>
                 )}
 
+                {/* Add Content Section */}
+                <div className="add-content-section-top">
+                  <div className="add-content-box-top">
+                    <h3 className="add-content-title-top">
+                      Neuen Inhalt hinzufügen
+                      <span className="section-subtitle">Add New Content</span>
+                    </h3>
+                    <p className="add-content-description-top">
+                      <span className="text-english">
+                        This platform currently supports adding content like articles from{' '}
+                        <a 
+                          href="https://www.nachrichtenleicht.de/nachrichtenleicht-nachrichten-100.html" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="source-link-button source-link-nachrichtenleicht"
+                          title="Click to visit nachrichtenleicht"
+                        >
+                          nachrichtenleicht
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }}>
+                            <path d="M11 3V1M11 1H9M11 1L4 8M6 1H2C1.44772 1 1 1.44772 1 2V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </a>
+                        {' '}or{' '}
+                        <a 
+                          href="https://www.dw.com/de/themen/s-9077" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="source-link-button source-link-dw"
+                          title="Click to visit Deutsche Welle"
+                        >
+                          DW
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }}>
+                            <path d="M11 3V1M11 1H9M11 1L4 8M6 1H2C1.44772 1 1 1.44772 1 2V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </a>
+                        {' '}and german videos (Max. 15 minutes) from{' '}
+                        <a 
+                          href="https://www.youtube.com/results?search_query=deutsch+youtube" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="source-link-button source-link-youtube"
+                          title="Click to visit YouTube"
+                        >
+                          YouTube
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }}>
+                            <path d="M11 3V1M11 1H9M11 1L4 8M6 1H2C1.44772 1 1 1.44772 1 2V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </a>
+                        {' '}
+                      </span>
+                    </p>
+                    <div className="add-content-input-group-top">
+                      <input
+                        type="text"
+                        className="add-content-input-top"
+                        placeholder="z.B. https://www.nachrichtenleicht.de/... oder https://www.dw.com/... oder https://www.youtube.com/... | e.g., https://www.nachrichtenleicht.de/... or https://www.dw.com/... or https://www.youtube.com/..."
+                        value={scrapeUrl}
+                        onChange={(e) => {
+                          setScrapeUrl(e.target.value);
+                          setScrapeError(null);
+                          setScrapeSuccess(false);
+                        }}
+                        disabled={scraping}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !scraping && scrapeUrl.trim()) {
+                            handleScrapeArticle();
+                          }
+                        }}
+                      />
+                      <button
+                        className="add-content-button-top"
+                        onClick={handleScrapeArticle}
+                        disabled={scraping || !scrapeUrl.trim()}
+                      >
+                        {scraping ? 'Hinzufügen...' : 'Hinzufügen'}
+                        {scraping ? ' | Adding...' : ' | Add'}
+                      </button>
+                    </div>
+                    {scrapeError && <div className="add-content-message-top error">{scrapeError}</div>}
+                    {scrapeSuccess && (
+                      <div className="add-content-message-top success">
+                        Inhalt erfolgreich hinzugefügt! | Content added successfully!
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* My Added Media Section */}
+                {!loading && privateItems.length > 0 && (
+                  <div className="my-added-media-section">
+                    <h2 className="my-added-media-title">My Added Media</h2>
+                    <div className="my-added-media-grid">
+                      {privateItems.map((item, index) => (
+                        <div 
+                          key={item.id} 
+                          className="content-card-modern"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <div className="content-card-image-wrapper">
+                            <img src={item.imageUrl} alt={item.title} className="content-card-image" />
+                            <div className="content-card-overlay">
+                              <div className="content-level-badge">{item.level}</div>
+                              <div className="content-type-badge">
+                                {getTypeIcon(item.type)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="content-card-body">
+                            {item.sourceUrl && (
+                              <a
+                                href={item.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="content-source-button"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M6 2H3C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V10M10 2H14M14 2V6M14 2L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Source
+                              </a>
+                            )}
+                            {item.topic && item.topic.toLowerCase() !== 'general' && (
+                              <div className="content-topic-badge">{item.topic}</div>
+                            )}
+                            <h3 className="content-card-title">{item.title}</h3>
+                            <p className="content-card-description">{item.description}</p>
+                            <button
+                              className="content-card-button"
+                              onClick={() => handleGenerateMaterials(item.id)}
+                            >
+                              Explore content
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Explore others section */}
                 {exploreItems.length > 0 && (
                   <div className="topic-section-modern">
@@ -706,148 +870,6 @@ export default function Dashboard() {
               </div>
             )}
           </>
-        )}
-
-        {/* Add Content Section - Moved to Bottom (Secondary Feature) */}
-        <div className="add-content-section-top">
-          <div className="add-content-box-top">
-            <h3 className="add-content-title-top">
-              Neuen Inhalt hinzufügen
-              <span className="section-subtitle">Add New Content</span>
-            </h3>
-            <p className="add-content-description-top">
-              <span className="text-english">
-                This platform currently supports adding content like articles from{' '}
-                <a 
-                  href="https://www.nachrichtenleicht.de/nachrichtenleicht-nachrichten-100.html" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="source-link-button source-link-nachrichtenleicht"
-                  title="Click to visit nachrichtenleicht"
-                >
-                  nachrichtenleicht
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }}>
-                    <path d="M11 3V1M11 1H9M11 1L4 8M6 1H2C1.44772 1 1 1.44772 1 2V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-                {' '}or{' '}
-                <a 
-                  href="https://www.dw.com/de/themen/s-9077" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="source-link-button source-link-dw"
-                  title="Click to visit Deutsche Welle"
-                >
-                  DW
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }}>
-                    <path d="M11 3V1M11 1H9M11 1L4 8M6 1H2C1.44772 1 1 1.44772 1 2V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-                {' '}and german videos (Max. 15 minutes) from{' '}
-                <a 
-                  href="https://www.youtube.com/results?search_query=deutsch+youtube" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="source-link-button source-link-youtube"
-                  title="Click to visit YouTube"
-                >
-                  YouTube
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }}>
-                    <path d="M11 3V1M11 1H9M11 1L4 8M6 1H2C1.44772 1 1 1.44772 1 2V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-                {' '}
-              </span>
-            </p>
-            <div className="add-content-input-group-top">
-              <input
-                type="text"
-                className="add-content-input-top"
-                placeholder="z.B. https://www.nachrichtenleicht.de/... oder https://www.dw.com/... oder https://www.youtube.com/... | e.g., https://www.nachrichtenleicht.de/... or https://www.dw.com/... or https://www.youtube.com/..."
-                value={scrapeUrl}
-                onChange={(e) => {
-                  setScrapeUrl(e.target.value);
-                  setScrapeError(null);
-                  setScrapeSuccess(false);
-                }}
-                disabled={scraping}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !scraping && scrapeUrl.trim()) {
-                    handleScrapeArticle();
-                  }
-                }}
-              />
-              <button
-                className="add-content-button-top"
-                onClick={handleScrapeArticle}
-                disabled={scraping || !scrapeUrl.trim()}
-              >
-                {scraping ? 'Hinzufügen...' : 'Hinzufügen'}
-                {scraping ? ' | Adding...' : ' | Add'}
-              </button>
-            </div>
-            {scrapeError && <div className="add-content-message-top error">{scrapeError}</div>}
-            {scrapeSuccess && (
-              <div className="add-content-message-top success">
-                Inhalt erfolgreich hinzugefügt! | Content added successfully!
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* My Added Media Section - Moved below Add Content */}
-        {!loading && privateItems.length > 0 && (
-          <div className="my-added-media-section">
-            <h2 className="my-added-media-title">My Added Media</h2>
-            <div className="my-added-media-grid">
-              {privateItems.map((item, index) => (
-                <div 
-                  key={item.id} 
-                  className="content-card-modern"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="content-card-image-wrapper">
-                    <img src={item.imageUrl} alt={item.title} className="content-card-image" />
-                    <div className="content-card-overlay">
-                      <div className="content-level-badge">{item.level}</div>
-                      <div className="content-type-badge">
-                        {getTypeIcon(item.type)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="content-card-body">
-                    {item.sourceUrl && (
-                      <a
-                        href={item.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="content-source-button"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M6 2H3C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V10M10 2H14M14 2V6M14 2L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        Source
-                      </a>
-                    )}
-                    {item.topic && (
-                      <div className="content-topic-badge">{item.topic}</div>
-                    )}
-                    <h3 className="content-card-title">{item.title}</h3>
-                    <p className="content-card-description">{item.description}</p>
-                    <button
-                      className="content-card-button"
-                      onClick={() => handleGenerateMaterials(item.id)}
-                    >
-                      Explore content
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
 
       </main>

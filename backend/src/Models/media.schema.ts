@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Media extends Document {
@@ -24,8 +24,8 @@ export class Media extends Document {
   @Prop()
   imageUrl: string;
 
-  @Prop({ required: false })
-  userId?: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: false })
+  userId?: Types.ObjectId;
 
   @Prop({ enum: ['global', 'private'], default: 'private' })
   visibility: 'global' | 'private';

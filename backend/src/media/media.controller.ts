@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { PersonalizationService } from '../personalization/personalization.service';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 @ApiTags('Media')
 @Controller('media')
@@ -59,11 +61,15 @@ export class MediaController {
     }
   })
   @Post('scrape')
-  async scrape(@Body() body: { url: string }) {
+  @UseGuards(JwtAuthGuard)
+  async scrape(
+    @Body() body: { url: string },
+    @CurrentUser() user: { userId: string }
+  ) {
     if (!body.url) {
       throw new Error('URL is required');
     }
-    return this.mediaService.scrapeAndSaveArticle(body.url);
+    return this.mediaService.scrapeAndSaveArticle(body.url, user.userId);
   }
 
   @ApiOperation({ summary: 'Generate personalization using real LLM' })
