@@ -1586,6 +1586,19 @@
   font-weight: 500;
 }
 
+.media-redirect-description .english-translation {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #6b7280;
+  margin-top: 0.75rem;
+  font-style: italic;
+  opacity: 0.85;
+  line-height: 1.6;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(107, 114, 128, 0.2);
+}
+
 .media-redirect-button {
   display: inline-flex;
   align-items: center;
@@ -2095,6 +2108,12 @@
 
   .media-redirect-description {
     font-size: 1rem;
+  }
+
+  .media-redirect-description .english-translation {
+    font-size: 0.8125rem;
+    margin-top: 0.625rem;
+    padding-top: 0.625rem;
   }
 
   .media-redirect-button {

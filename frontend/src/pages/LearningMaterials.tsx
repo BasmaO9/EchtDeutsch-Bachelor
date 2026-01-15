@@ -1214,10 +1214,42 @@ export default function LearningMaterials() {
 
 
   const getCategory = (topic: string): string => {
+    const topicMap: Record<string, string> = {
+      'business': 'Geschäft',
+      'culture': 'Kultur',
+      'environment': 'Umfeld',
+      'food': 'Essen',
+      'science': 'Wissenschaft',
+      'sports': 'Sport',
+      'student life': 'Studentenleben',
+      'technology': 'Technologie',
+      'travel': 'Reisen',
+      'politics': 'Politik',
+      'health': 'Gesundheit',
+      'education': 'Bildung',
+      'entertainment': 'Unterhaltung',
+      'news': 'Nachrichten',
+      'general': 'Allgemein',
+    };
+    
     if (topic) {
-      return topic.charAt(0).toUpperCase() + topic.slice(1);
+      const lowerTopic = topic.toLowerCase();
+      return topicMap[lowerTopic] || topic.charAt(0).toUpperCase() + topic.slice(1);
     }
-    return 'General';
+    return 'Allgemein';
+  };
+
+  const getPartOfSpeechGerman = (partOfSpeech: string): string => {
+    const partOfSpeechLower = partOfSpeech.toLowerCase();
+    if (partOfSpeechLower === 'adjective') {
+      return 'Adjektiv';
+    } else if (partOfSpeechLower === 'noun') {
+      return 'Nomen';
+    } else if (partOfSpeechLower === 'verb') {
+      return 'Verb';
+    }
+    // Fallback to original if not recognized
+    return partOfSpeech;
   };
 
   return (
@@ -1275,7 +1307,7 @@ export default function LearningMaterials() {
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M9 1.5V4.5M9 13.5V16.5M16.5 9H13.5M4.5 9H1.5M14.1975 3.8025L12.1275 5.8725M5.8725 12.1275L3.8025 14.1975M14.1975 14.1975L12.1275 12.1275M5.8725 5.8725L3.8025 3.8025" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Regenerate scaffold</span>
+                    <span>Generate New Scaffold</span>
                   </>
                 )}
               </button>
@@ -1335,7 +1367,7 @@ export default function LearningMaterials() {
                         aria-label={cefrAnalysisExpanded ? 'Collapse analysis' : 'Expand analysis'}
                       >
                         <span className="expand-button-text">
-                          {cefrAnalysisExpanded ? 'Collapse' : 'Expand'}
+                          {cefrAnalysisExpanded ? '' : ''}
                         </span>
                         <svg 
                           width="20" 
@@ -1410,7 +1442,7 @@ export default function LearningMaterials() {
                         className="toggle-english"
                         onClick={() => setShowSummaryEnglish((prev) => !prev)}
                       >
-                        {showSummaryEnglish ? 'Hide English' : 'Show English'}
+                        Englisch
                       </button>
                     </div>
                   </div>
@@ -1451,7 +1483,7 @@ export default function LearningMaterials() {
                         className="toggle-english"
                         onClick={() => setShowVocabEnglish((prev) => !prev)}
                       >
-                        {showVocabEnglish ? 'Hide English' : 'Show English'}
+                        Englisch
                       </button>
                     </div>
                   </div>
@@ -1491,7 +1523,7 @@ export default function LearningMaterials() {
                                 )}
                               </button>
                             </div>
-                            <div className="vocab-part-of-speech">{vocab.partOfSpeech}</div>
+                            <div className="vocab-part-of-speech">{getPartOfSpeechGerman(vocab.partOfSpeech)}</div>
                           </div>
                           <div className="vocab-usage">
                             <strong>From transcript:</strong> "{vocab.usageInTranscript}"
@@ -1532,7 +1564,7 @@ export default function LearningMaterials() {
                         className="toggle-english"
                         onClick={() => setShowFunFactEnglish((prev) => !prev)}
                       >
-                        {showFunFactEnglish ? 'Hide English' : 'Show English'}
+                        Englisch
                       </button>
                     </div>
                   </div>
@@ -1566,7 +1598,7 @@ export default function LearningMaterials() {
                         className="toggle-english"
                         onClick={() => setShowNaturalExpressionsEnglish((prev) => !prev)}
                       >
-                        {showNaturalExpressionsEnglish ? 'Hide English' : 'Show English'}
+                        Englisch
                       </button>
                     </div>
                   </div>
@@ -1617,7 +1649,7 @@ export default function LearningMaterials() {
                           className="toggle-english"
                           onClick={() => setShowCultureNuggetEnglish((prev) => !prev)}
                         >
-                          {showCultureNuggetEnglish ? 'Hide English' : 'Show English'}
+                          Englisch
                         </button>
                       </div>
                     </div>
@@ -1649,7 +1681,7 @@ export default function LearningMaterials() {
                           className="toggle-english"
                           onClick={() => setShowPersonalizableElementEnglish((prev) => !prev)}
                         >
-                          {showPersonalizableElementEnglish ? 'Hide English' : 'Show English'}
+                          Englisch
                         </button>
                       </div>
                     </div>
@@ -1679,8 +1711,18 @@ export default function LearningMaterials() {
                       </h2>
                       <p className="media-redirect-description">
                         {hasVisitedMediaSource 
-                          ? 'You\'ve viewed the original content. Now you\'re ready to test your understanding!'
-                          : 'Before testing your knowledge, take a moment to explore the original content. This will help you better understand the context and prepare for the questions.'}
+                          ? (
+                            <>
+                              Du hast den Originalinhalt angesehen. Jetzt bist du bereit, dein Verständnis zu testen!
+                              <span className="english-translation">You've viewed the original content. Now you're ready to test your understanding!</span>
+                            </>
+                          )
+                          : (
+                            <>
+                              Bevor Sie Ihr Wissen testen, nehmen Sie sich einen Moment Zeit, um den Originaltext zu erkunden. Dies wird Ihnen helfen, den Kontext besser zu verstehen und sich auf die Fragen vorzubereiten.
+                              <span className="english-translation">Before testing your knowledge, take a moment to explore the original content. This will help you better understand the context and prepare for the questions.</span>
+                            </>
+                          )}
                       </p>
                       <button
                         type="button"
@@ -1761,7 +1803,7 @@ export default function LearningMaterials() {
                               </button>
                               {!hasVisitedMediaSource && (
                                 <p className="game-button-hint">
-                                  Erkunde zuerst den Originalinhalt, um fortzufahren
+                                  Read the article or watch the video to start the quiz
                                 </p>
                               )}
                             </div>

@@ -1176,7 +1176,7 @@ export default function Evaluation() {
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 1.5L10.5 6L15 7.5L10.5 9L9 13.5L7.5 9L3 7.5L7.5 6L9 1.5Z" fill="currentColor"/>
                 </svg>
-                {showEnglish ? 'Englisch ausblenden' : 'Englisch anzeigen'}
+                Englisch
               </button>
             </div>
             

@@ -40,7 +40,34 @@ const extractSource = (sourceUrl: string): string | null => {
   return null; // Return null instead of 'Unknown'
 };
 
-// Helper function to translate topic to English (for display)
+// Helper function to translate topic to German (for display)
+const translateTopicToGerman = (topic: string): string => {
+  const topicMap: Record<string, string> = {
+    'business': 'Geschäft',
+    'culture': 'Kultur',
+    'environment': 'Umfeld',
+    'food': 'Essen',
+    'science': 'Wissenschaft',
+    'sports': 'Sport',
+    'student life': 'Studentenleben',
+    'technology': 'Technologie',
+    'travel': 'Reisen',
+    'politics': 'Politik',
+    'health': 'Gesundheit',
+    'education': 'Bildung',
+    'entertainment': 'Unterhaltung',
+    'news': 'Nachrichten',
+    'general': 'Allgemein',
+  };
+  
+  if (topic) {
+    const lowerTopic = topic.toLowerCase();
+    return topicMap[lowerTopic] || topic.charAt(0).toUpperCase() + topic.slice(1);
+  }
+  return 'Allgemein';
+};
+
+// Helper function to translate topic to English (for display) - kept for backward compatibility
 const translateTopicToEnglish = (topic: string): string => {
   const topicMap: Record<string, string> = {
     'politics': 'Politics',
@@ -528,7 +555,7 @@ export default function Dashboard() {
                   className={`category-tab ${selectedCategory === topic ? 'active' : ''}`}
                   onClick={() => setSelectedCategory(topic)}
                 >
-                  {topic}
+                  {translateTopicToGerman(topic)}
                 </button>
               ))}
           </div>
@@ -544,7 +571,7 @@ export default function Dashboard() {
             <input
               type="text"
               className="search-input-modern"
-              placeholder="Search content..."
+              placeholder="Suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -554,7 +581,7 @@ export default function Dashboard() {
               className={`type-filter ${selectedType === 'all' ? 'active' : ''}`}
               onClick={() => setSelectedType('all')}
             >
-              All
+              Alle
             </button>
             <button
               className={`type-filter ${selectedType === 'video' ? 'active' : ''}`}
@@ -566,7 +593,7 @@ export default function Dashboard() {
               className={`type-filter ${selectedType === 'article' ? 'active' : ''}`}
               onClick={() => setSelectedType('article')}
             >
-              Articles
+              Artikel
             </button>
           </div>
         </div>
@@ -642,11 +669,11 @@ export default function Dashboard() {
                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M6 2H3C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V10M10 2H14M14 2V6M14 2L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                Source
+                                
                               </a>
                             )}
                             {item.topic && (
-                              <div className="content-topic-badge">{item.topic}</div>
+                              <div className="content-topic-badge">{translateTopicToGerman(item.topic)}</div>
                             )}
                             <h3 className="content-card-title">{item.title}</h3>
                             <p className="content-card-description">{item.description}</p>
@@ -654,7 +681,7 @@ export default function Dashboard() {
                               className="content-card-button"
                               onClick={() => handleGenerateMaterials(item.id)}
                             >
-                              Explore content
+                              Los geht's!
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
@@ -756,7 +783,12 @@ export default function Dashboard() {
                 {/* My Added Media Section */}
                 {!loading && privateItems.length > 0 && (
                   <div className="my-added-media-section">
-                    <h2 className="my-added-media-title">My Added Media</h2>
+                    <div className="topic-section-header">
+                      <h2 className="topic-section-title">
+                        Meine Medien
+                        <span className="section-subtitle">My Added Media</span>
+                      </h2>
+                    </div>
                     <div className="my-added-media-grid">
                       {privateItems.map((item, index) => (
                         <div 
@@ -784,11 +816,11 @@ export default function Dashboard() {
                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M6 2H3C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V10M10 2H14M14 2V6M14 2L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                Source
+                                
                               </a>
                             )}
                             {item.topic && item.topic.toLowerCase() !== 'general' && (
-                              <div className="content-topic-badge">{item.topic}</div>
+                              <div className="content-topic-badge">{translateTopicToGerman(item.topic)}</div>
                             )}
                             <h3 className="content-card-title">{item.title}</h3>
                             <p className="content-card-description">{item.description}</p>
@@ -796,7 +828,7 @@ export default function Dashboard() {
                               className="content-card-button"
                               onClick={() => handleGenerateMaterials(item.id)}
                             >
-                              Explore content
+                              Los geht's!
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
@@ -844,11 +876,11 @@ export default function Dashboard() {
                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M6 2H3C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V10M10 2H14M14 2V6M14 2L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                Source
+                                
                               </a>
                             )}
                             {item.topic && (
-                              <div className="content-topic-badge">{item.topic}</div>
+                              <div className="content-topic-badge">{translateTopicToGerman(item.topic)}</div>
                             )}
                             <h3 className="content-card-title">{item.title}</h3>
                             <p className="content-card-description">{item.description}</p>
@@ -856,7 +888,7 @@ export default function Dashboard() {
                               className="content-card-button"
                               onClick={() => handleGenerateMaterials(item.id)}
                             >
-                              Explore content
+                              Los geht's!
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>

@@ -51,9 +51,9 @@ export default function SharedHeader() {
         if (profile && (profile as any).goal) {
           const goal = (profile as any).goal;
           const goalMap: Record<string, string> = {
-            'vocabulary': 'Vocabulary',
-            'reading': 'Comprehension',
-            'grammar': 'Grammar',
+            'vocabulary': 'Wortschatz',
+            'reading': 'Verständnis',
+            'grammar': 'Grammatik',
             'general': 'General'
           };
           setUserGoal(goalMap[goal] || goal.charAt(0).toUpperCase() + goal.slice(1));
@@ -143,9 +143,9 @@ export default function SharedHeader() {
     try {
       const currentProfile = await userProfileApi.getProfile();
       const goalMap: Record<string, string> = {
-        'vocabulary': 'Vocabulary',
-        'reading': 'Comprehension',
-        'grammar': 'Grammar',
+        'vocabulary': 'Wortschatz',
+        'reading': 'Verständnis',
+        'grammar': 'Grammatik',
       };
       
       await userProfileApi.saveProfile({
@@ -218,6 +218,20 @@ export default function SharedHeader() {
         </button>
         {menuOpen && (
           <div className="menu-dropdown">
+            {showReportButton && (
+              <button 
+                className="menu-dropdown-item report-bug-menu-item"
+                onClick={() => {
+                  setReportModalOpen(true);
+                  setMenuOpen(false);
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 9V11M12 15H12.01M5 20H19C19.5304 20 20.0391 19.7893 20.4142 19.4142C20.7893 19.0391 21 18.5304 21 18V6C21 5.46957 20.7893 4.96086 20.4142 4.58579C20.0391 4.21071 19.5304 4 19 4H5C4.46957 4 3.96086 4.21071 3.58579 4.58579C3.21071 4.96086 3 5.46957 3 6V18C3 18.5304 3.21071 19.0391 3.58579 19.4142C3.96086 19.7893 4.46957 20 5 20Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Report Bug
+              </button>
+            )}
             <button 
               className="menu-dropdown-item sign-out-button"
               onClick={handleSignOut}
@@ -242,23 +256,11 @@ export default function SharedHeader() {
               <path d="M4 5.5C4 4.67157 4.67157 4 5.5 4H20.5C21.3284 4 22 4.67157 22 5.5C22 6.32843 21.3284 7 20.5 7H5.5C4.67157 7 4 6.32843 4 5.5Z" fill="currentColor"/>
               <path d="M4 12.5C4 11.6716 4.67157 11 5.5 11H20.5C21.3284 11 22 11.6716 22 12.5C22 13.3284 21.3284 14 20.5 14H5.5C4.67157 14 4 13.3284 4 12.5Z" fill="currentColor"/>
             </svg>
-            <span>Library</span>
-          </button>
-        )}
-        {showReportButton && (
-          <button
-            className="report-bug-button"
-            onClick={() => setReportModalOpen(true)}
-            title="Report Bug / Hallucination"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 9V11M12 15H12.01M5 20H19C19.5304 20 20.0391 19.7893 20.4142 19.4142C20.7893 19.0391 21 18.5304 21 18V6C21 5.46957 20.7893 4.96086 20.4142 4.58579C20.0391 4.21071 19.5304 4 19 4H5C4.46957 4 3.96086 4.21071 3.58579 4.58579C3.21071 4.96086 3 5.46957 3 6V18C3 18.5304 3.21071 19.0391 3.58579 19.4142C3.96086 19.7893 4.46957 20 5 20Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Report Bug</span>
+            <span>Bibliothek</span>
           </button>
         )}
         <div className="level-badge-modern">
-          <span className="level-text">Level {userCefr}</span>
+          <span className="level-text">{userCefr}</span>
           <div className="goal-selector-wrapper" ref={goalDropdownRef}>
             {userGoal ? (
               <button
@@ -274,7 +276,7 @@ export default function SharedHeader() {
                 onClick={() => setGoalDropdownOpen(!goalDropdownOpen)}
                 disabled={updatingGoal}
               >
-                • Select Goal {updatingGoal ? '...' : '▼'}
+                • Ziel wählen {updatingGoal ? '...' : '▼'}
               </button>
             )}
             {goalDropdownOpen && (
@@ -284,21 +286,21 @@ export default function SharedHeader() {
                   onClick={() => handleGoalChange('vocabulary')}
                   disabled={updatingGoal}
                 >
-                  Vocabulary
+                  Wortschatz <span className="goal-option-english">(Vocabulary)</span>
                 </button>
                 <button
                   className={`goal-option ${userGoalValue === 'reading' ? 'selected' : ''}`}
                   onClick={() => handleGoalChange('reading')}
                   disabled={updatingGoal}
                 >
-                  Comprehension
+                  Verständnis <span className="goal-option-english">(Comprehension)</span>
                 </button>
                 <button
                   className={`goal-option ${userGoalValue === 'grammar' ? 'selected' : ''}`}
                   onClick={() => handleGoalChange('grammar')}
                   disabled={updatingGoal}
                 >
-                  Grammar
+                  Grammatik <span className="goal-option-english">(Grammar)</span>
                 </button>
               </div>
             )}
